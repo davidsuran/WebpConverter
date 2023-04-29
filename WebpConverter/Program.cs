@@ -34,7 +34,7 @@ namespace WebpConverter
         private static void Convert(string path)
         {
             byte[] fileBytes = File.ReadAllBytes(path);
-            string outFile = FormattableString.Invariant($"{Path.GetFileNameWithoutExtension(path)}.jpg");
+            string outFile = FormattableString.Invariant($"{Path.GetDirectoryName(path)}{Path.DirectorySeparatorChar}{Path.GetFileNameWithoutExtension(path)}.jpg");
             File.Delete(outFile);
 
             FileStream outStream = new FileStream(outFile, FileMode.Create);
