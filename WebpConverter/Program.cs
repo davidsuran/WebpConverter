@@ -2,25 +2,52 @@
 using System.IO;
 using System.Drawing;
 using Imazen.WebP;
+using System.Runtime.Versioning;
+using OutputType = System.Drawing.Imaging.ImageFormat;
+using System.Linq;
 
 namespace WebpConverter
 {
+    [SupportedOSPlatform("Windows")]
     class Program
     {
+        private enum OutputTypeOption
+        {
+            Png,
+            Jpg
+        }
+
         static void Main(string[] args)
         {
-            //System.Diagnostics.Debugger.Launch();
+            System.Diagnostics.Debugger.Launch();
 
             if (args.Length == 0)
+            {
                 return;
+            }
+
+            OutputTypeOption outputTypeMode = OutputTypeOption.Png;
+            string option = args.FirstOrDefault(o => o.StartsWith("-"));
+            if (!string.IsNullOrWhiteSpace(option))
+            {
+                if (option == "-jpg")
+                {
+                    outputTypeMode = OutputTypeOption.Jpg;
+                }
+            }
 
             try
             {
                 Imazen.WebP.Extern.LoadLibrary.LoadWebPOrFail();
 
-                foreach(var path in args)
+                foreach (string path in args)
                 {
-                    Convert(path);
+                    if (path.StartsWith("-"))
+                    {
+                        continue;
+                    }
+
+                    Convert(path, outputTypeMode);
                 }
 
             }
@@ -31,17 +58,24 @@ namespace WebpConverter
             }
         }
 
-        private static void Convert(string path)
+        private static void Convert(string path, OutputTypeOption outputTypeOption)
         {
             byte[] fileBytes = File.ReadAllBytes(path);
-            string outFile = FormattableString.Invariant($"{Path.GetDirectoryName(path)}{Path.DirectorySeparatorChar}{Path.GetFileNameWithoutExtension(path)}.jpg");
+            string outFile = FormattableString.Invariant($"{Path.GetDirectoryName(path)}{Path.DirectorySeparatorChar}{Path.GetFileNameWithoutExtension(path)}.{outputTypeOption.ToString().ToLowerInvariant()}");
             File.Delete(outFile);
 
             FileStream outStream = new FileStream(outFile, FileMode.Create);
             SimpleDecoder decoder = new SimpleDecoder();
 
             Bitmap outBitmap = decoder.DecodeFromBytes(fileBytes, fileBytes.LongLength);
-            outBitmap.Save(outStream, System.Drawing.Imaging.ImageFormat.Jpeg);
+
+            OutputType outputType = OutputType.Png;
+            if (outputTypeOption == OutputTypeOption.Jpg)
+            {
+                outputType = OutputType.Jpeg;
+            }
+
+            outBitmap.Save(outStream, outputType);
             outStream.Close();
         }
     }
